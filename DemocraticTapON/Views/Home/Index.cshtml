@@ -1,8 +1,41 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewBag.Title = "Home";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="home-page">
+    <div class="parliament-image-wrapper">
+        <img class="parliament-image" src="~/Assets/Frame_1.png" alt="Parliament Image" />
+    </div>
+
+    <div class="hero-section text-center">
+        <h1 class="hero-title">DEMOCRATIC TAP ON</h1>
+        <p class="hero-subtitle">Actions speak louder than words. Politicians' votes shape the laws that affect us all.</p>
+        <a href="/Bills" class="btn btn-primary btn-vote-bills">Vote Bills</a>
+    </div>
+
+    <div class="feedback-section">
+        <div class="feedback-box">
+            <h3>Feedback</h3>
+            <textarea class="form-control feedback-input" placeholder="Write your feedback here."></textarea>
+        </div>
+
+        <div class="current-parliament">
+            <h3>Current Parliament</h3>
+            <div class="Rectangle-826" style="display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 20px;">
+                <div class="parliament-stat" style="grid-column: 1; grid-row: 1;">
+                    <h2>123</h2>
+                    <p>Bills before parliament</p>
+                </div>
+                <div class="parliament-stat" style="grid-column: 2; grid-row: 1;">
+                    <h2>123</h2>
+                    <p>Bills not proceeding</p>
+                </div>
+                <div class="parliament-stat" style="grid-column: 1 / 3; grid-row: 2;">
+                    <h2>123</h2>
+                    <p>Bills assented to</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

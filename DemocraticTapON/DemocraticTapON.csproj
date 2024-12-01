@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\Assets\et_facebook.svg" />
+    <None Include="wwwroot\Assets\et_twitter.svg" />
+    <None Include="wwwroot\Assets\Parliament_Image_1.png" />
+    <None Include="wwwroot\Assets\ph_instagram-logo-thin.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
