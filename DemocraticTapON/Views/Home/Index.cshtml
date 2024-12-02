@@ -1,8 +1,45 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewBag.Title = "Home";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Democratic Tap on</p>
+<div class="home-page">
+    <div class="parliament-image-wrapper">
+        <img class="parliament-image" src="~/Assets/Frame_1.png" alt="Parliament Image" />
+    </div>
+
+    <div class="hero-section text-center">
+        <h1 class="hero-title">DEMOCRATIC TAP ON</h1>
+        <p class="hero-subtitle">Actions speak louder than words. Politicians' votes shape the laws that affect us all.</p>
+        <a href="/Bills" class="btn btn-primary btn-vote-bills">Vote Bills</a>
+    </div>
+    
+
+    <div class="feedback-section">
+        <div class="feedback-box">
+            <h3>Feedback</h3>
+            <textarea class="form-control feedback-input" placeholder="Write your feedback here."></textarea>
+        </div>
+
+        <div class="current-parliament">
+          
+            <div class="Rectangle-826" style="display: flex; flex-direction: column; align-items: center; padding: 20px; border: 2px solid #000; border-radius: 25px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);">
+                <h3>Current Parliament</h3>
+                <div style="display: flex; justify-content: space-between; width: 100%; max-width: 600px;">
+                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
+                        <h2>123</h2>
+                        <p>Bills before parliament</p>
+                    </div>
+                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
+                        <h2>123</h2>
+                        <p>Bills not proceeding</p>
+                    </div>
+                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
+                        <h2>123</h2>
+                        <p>Bills assented to</p>
+                    </div>
+                </div>
+            </div>
+
+   
 </div>

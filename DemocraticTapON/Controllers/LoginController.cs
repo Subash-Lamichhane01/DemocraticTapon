@@ -16,8 +16,7 @@ namespace DemocraticTapON.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Implement your login logic here
-                // e.g., check the username and password against a database or authentication service
+                
 
                 return RedirectToAction("Index", "Home");
             }
