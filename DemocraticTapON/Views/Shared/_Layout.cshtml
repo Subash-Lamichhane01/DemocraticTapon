@@ -33,14 +33,17 @@
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Representatives" ? "active" : "")" href="@Url.Action("Index", "Representatives")">Representatives</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "AboutUs" ? "active" : "")" href="@Url.Action("AboutUs", "Home")">About Us</a>
+
+                        <li class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "AboutUs" ? "active" : "")">
+                            <a class="nav-link" asp-controller="AboutUs" asp-action="Index">About Us</a>
                         </li>
+                      
                     </ul>
 
                     <!-- Login and Sign Up buttons -->
                     <div class="d-flex navbar-action-buttons">
-                        <a class="btn btn-outline-primary me-2" href="@Url.Action("Login", "Account")">Login</a>
+                        <a class="btn btn-outline-primary me-2" href="@Url.Action("Login", "Login")">Login</a>
+
                         <a class="btn btn-primary btn-sign-up" href="@Url.Action("SignUp", "Account")">Sign Up</a>
                     </div>
                 </div>

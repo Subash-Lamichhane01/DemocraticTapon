@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,29 +6,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using DemocraticTapON.Data;
-using DemocraticTapON.Models;
 
-
-
-
-namespace DemocraticTapON.Controllers
+namespace DemocraticTapON.Models
 {
-    public class BillsController : Controller
+    public class RepresentativesController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public BillsController(ApplicationDbContext context)
+        public RepresentativesController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // GET: Bills
+        // GET: Representatives
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Bills.ToListAsync());
+            return View(await _context.Representatives.ToListAsync());
         }
 
-        // GET: Bills/Details/5
+        // GET: Representatives/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -36,39 +32,39 @@ namespace DemocraticTapON.Controllers
                 return NotFound();
             }
 
-            var bill = await _context.Bills
-                .FirstOrDefaultAsync(m => m.BillId == id);
-            if (bill == null)
+            var representative = await _context.Representatives
+                .FirstOrDefaultAsync(m => m.RepresentativeId == id);
+            if (representative == null)
             {
                 return NotFound();
             }
 
-            return View(bill);
+            return View(representative);
         }
 
-        // GET: Bills/Create
+        // GET: Representatives/Create
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Bills/Create
+        // POST: Representatives/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BillId,Title,DateIntroduced,Status")] Bill bill)
+        public async Task<IActionResult> Create([Bind("RepresentativeId,Name,Constituency")] Representative representative)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(bill);
+                _context.Add(representative);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(bill);
+            return View(representative);
         }
 
-        // GET: Bills/Edit/5
+        // GET: Representatives/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -76,22 +72,22 @@ namespace DemocraticTapON.Controllers
                 return NotFound();
             }
 
-            var bill = await _context.Bills.FindAsync(id);
-            if (bill == null)
+            var representative = await _context.Representatives.FindAsync(id);
+            if (representative == null)
             {
                 return NotFound();
             }
-            return View(bill);
+            return View(representative);
         }
 
-        // POST: Bills/Edit/5
+        // POST: Representatives/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BillId,Title,DateIntroduced,Status")] Bill bill)
+        public async Task<IActionResult> Edit(int id, [Bind("RepresentativeId,Name,Constituency")] Representative representative)
         {
-            if (id != bill.BillId)
+            if (id != representative.RepresentativeId)
             {
                 return NotFound();
             }
@@ -100,12 +96,12 @@ namespace DemocraticTapON.Controllers
             {
                 try
                 {
-                    _context.Update(bill);
+                    _context.Update(representative);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BillExists(bill.BillId))
+                    if (!RepresentativeExists(representative.RepresentativeId))
                     {
                         return NotFound();
                     }
@@ -116,10 +112,10 @@ namespace DemocraticTapON.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(bill);
+            return View(representative);
         }
 
-        // GET: Bills/Delete/5
+        // GET: Representatives/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -127,34 +123,34 @@ namespace DemocraticTapON.Controllers
                 return NotFound();
             }
 
-            var bill = await _context.Bills
-                .FirstOrDefaultAsync(m => m.BillId == id);
-            if (bill == null)
+            var representative = await _context.Representatives
+                .FirstOrDefaultAsync(m => m.RepresentativeId == id);
+            if (representative == null)
             {
                 return NotFound();
             }
 
-            return View(bill);
+            return View(representative);
         }
 
-        // POST: Bills/Delete/5
+        // POST: Representatives/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var bill = await _context.Bills.FindAsync(id);
-            if (bill != null)
+            var representative = await _context.Representatives.FindAsync(id);
+            if (representative != null)
             {
-                _context.Bills.Remove(bill);
+                _context.Representatives.Remove(representative);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BillExists(int id)
+        private bool RepresentativeExists(int id)
         {
-            return _context.Bills.Any(e => e.BillId == id);
+            return _context.Representatives.Any(e => e.RepresentativeId == id);
         }
     }
 }
