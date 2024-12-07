@@ -4,7 +4,6 @@ using DemocraticTapON.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Register ApplicationDbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -17,7 +16,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios.
     app.UseHsts();
 }
 
@@ -28,15 +26,17 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+// Custom route for AboutUs (if using "Index" for the action name)
 app.MapControllerRoute(
-    name: "Login",
-    pattern: "login",  // Match the URL /login
-    defaults: new { controller = "Login", action = "Login" }  // Default to LoginController and its Index action
+    name: "about-us",
+    pattern: "about-us",  // Matches the URL /about-us
+    defaults: new { controller = "Home", action = "Index" }
 );
 
-
+// Default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 app.Run();
