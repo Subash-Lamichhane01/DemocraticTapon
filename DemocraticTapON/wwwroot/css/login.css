@@ -12,6 +12,7 @@
     background-repeat: no-repeat;
 }
 
+
 .login-container {
     background-color: transparent;
     padding: 40px;
@@ -33,18 +34,6 @@
         margin-bottom: 20px;
         border: 1px solid #ccc;
         border-radius: 5px;
-    }
-
-    .login-container button {
-        width: fit-content;
-        display: block;
-        padding-block: 10px;
-        padding-inline: 60px;
-        background-color: #7731d8;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
     }
 i{
     padding: 10px;

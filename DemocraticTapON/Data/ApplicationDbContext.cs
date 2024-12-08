@@ -39,6 +39,6 @@ namespace DemocraticTapON.Data
                 .WithMany(b => b.UserBill)
                 .HasForeignKey(ub => ub.BillId);
         }
-        public DbSet<DemocraticTapON.Models.LoginModel> LoginModel { get; set; } = default!;
+        public DbSet<DemocraticTapON.Models.AccountModel> LoginModel { get; set; } = default!;
     }
 }
