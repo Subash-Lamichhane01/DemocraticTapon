@@ -18,7 +18,8 @@ namespace DemocraticTapON.Data
         public DbSet<UserBill> UserBills { get; set; } // Adding UserBill DbSet
         public DbSet<Comment> Comments { get; set; } // Adding Comment DbSet
         public DbSet<Representative> Representatives { get; set; }
-        
+
+        public DbSet<AccountModel> Accounts { get; set; }
 
         // Override OnModelCreating to configure relationships and other entity configurations
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -38,7 +39,19 @@ namespace DemocraticTapON.Data
                 .HasOne(ub => ub.Bill)
                 .WithMany(b => b.UserBill)
                 .HasForeignKey(ub => ub.BillId);
+
+            modelBuilder.Entity<AccountModel>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Username).IsUnique();
+                entity.Property(e => e.Username).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Password).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.PhoneNumber).IsRequired();
+                entity.Property(e => e.Email).HasMaxLength(256);
+                entity.Property(e => e.FirstName).HasMaxLength(50);
+                entity.Property(e => e.LastName).HasMaxLength(50);
+            });
         }
-        public DbSet<DemocraticTapON.Models.AccountModel> LoginModel { get; set; } = default!;
+
     }
 }
