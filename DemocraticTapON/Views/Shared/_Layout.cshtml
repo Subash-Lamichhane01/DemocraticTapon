@@ -42,34 +42,16 @@
                     <ul class="navbar-nav mb-2 mb-lg-0">
                         <!-- Home Link -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-bold @(ViewBag.Title == "Home" ? "active" : "")"
-                               href="@Url.Action("Index", "Home")">
-                                Home
-                            </a>
+                            <a class="nav-link text-white fw-bold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" href="@Url.Action("Index", "Home")">Home</a>
                         </li>
-
-                        <!-- Bills Link -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-bold @(ViewBag.Title == "Bills" ? "active" : "")"
-                               href="@Url.Action("Index", "UserBill")">
-                                Bills
-                            </a>
+                            <a class="nav-link text-white fw-bold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bills" ? "active" : "")" href="@Url.Action("Index", "Bills")">Bills</a>
                         </li>
-
-                        <!-- Representatives Link -->
                         <li class="nav-item">
-                            <a class="nav-link text-white fw-bold @(ViewBag.Title == "Representatives" ? "active" : "")"
-                               href="@Url.Action("Index", "Representatives")">
-                                Representatives
-                            </a>
+                            <a class="nav-link text-white fw-bold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Representatives" ? "active" : "")" href="@Url.Action("Index", "Representatives")">Representatives</a>
                         </li>
-
-                        <!-- About Us Link -->
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-bold @(ViewBag.Title == "About Us" ? "active" : "")"
-                               href="@Url.Action("AboutUs", "Home")">
-                                About Us
-                            </a>
+                        <li class="nav-item  @(ViewContext.RouteData.Values["controller"]?.ToString() == "AboutUs" ? "active" : "")">
+                            <a class="nav-link text-white fw-bold" asp-controller="AboutUs" asp-action="AboutUs">About Us</a>
                         </li>
 
                         <!-- Contact Link -->
