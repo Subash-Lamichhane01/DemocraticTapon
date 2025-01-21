@@ -4,46 +4,68 @@
 }
 
 <div class="home-page">
-    <div class="parliament-image-wrapper">
+    <!-- Parliament Image Section -->
+    <div class="parliament-image-wrapper image-container">
         <img class="parliament-image" src="~/Assets/Frame_1.png" alt="Parliament Image" />
     </div>
 
+    <!-- Hero Section -->
     <div class="hero-section text-center">
         <h1 class="hero-title">DEMOCRATIC TAP ON</h1>
-        <p class="hero-subtitle">Actions speak louder than words. Politicians' votes shape the laws that affect us all.</p>
-        <a href="/Bills" class="btn btn-primary btn-vote-bills">Vote Bills</a>
+        <p class="hero-subtitle">
+            Actions speak louder than words. Politicians' votes shape the laws that affect us all.
+        </p>
+        <a href="/Bills" class="btn btn-vote-bills">Vote Bills</a>
     </div>
 
-    <div class="feedback-section">
-        <div class="feedback-box">
-            <h3>Feedback</h3>
-            <textarea class="form-control feedback-input" placeholder="Write your feedback here."></textarea>
-        </div>
+    <!-- Main Content Section -->
+    <div class="container">
+        <div class="row">
+            <!-- News Feeds Section -->
+            <div class="col-lg-6 col-sm-8 col-12 news-feeds-section">
+                <h3 class="text-center">News Feeds</h3>
+                <ul class="news-feed-list">
+                    <li class="news-item">
+                        <h5 class="news-title">Placeholder Title 1</h5>
+                        <p class="news-description">This is a placeholder for the latest news feed item.</p>
+                        <span class="news-date d-flex align-items-center gap-2">
+                            <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                <path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l80 0 0 56-80 0 0-56zm0 104l80 0 0 64-80 0 0-64zm128 0l96 0 0 64-96 0 0-64zm144 0l80 0 0 64-80 0 0-64zm80-48l-80 0 0-56 80 0 0 56zm0 160l0 40c0 8.8-7.2 16-16 16l-64 0 0-56 80 0zm-128 0l0 56-96 0 0-56 96 0zm-144 0l0 56-64 0c-8.8 0-16-7.2-16-16l0-40 80 0zM272 248l-96 0 0-56 96 0 0 56z" />
+                            </svg>
+                            <span>2024-12-09</span>
+                        </span>
+                    </li>
+                    <li class="news-item">
+                        <h5 class="news-title">Placeholder Title 2</h5>
+                        <p class="news-description">Another placeholder for a news feed item.</p>
+                        <span class="news-date d-flex align-items-center gap-2">
+                            <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                <path d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L64 64C28.7 64 0 92.7 0 128l0 16 0 48L0 448c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-256 0-48 0-16c0-35.3-28.7-64-64-64l-40 0 0-40c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 40L152 64l0-40zM48 192l80 0 0 56-80 0 0-56zm0 104l80 0 0 64-80 0 0-64zm128 0l96 0 0 64-96 0 0-64zm144 0l80 0 0 64-80 0 0-64zm80-48l-80 0 0-56 80 0 0 56zm0 160l0 40c0 8.8-7.2 16-16 16l-64 0 0-56 80 0zm-128 0l0 56-96 0 0-56 96 0zm-144 0l0 56-64 0c-8.8 0-16-7.2-16-16l0-40 80 0zM272 248l-96 0 0-56 96 0 0 56z" />
+                            </svg>
+                            <span>2024-12-08</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
 
-        <div class="current-parliament">
-            <div class="Rectangle-826" style="display: flex; flex-direction: column; align-items: center; padding: 20px; border: 2px solid #000; border-radius: 25px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);">
-                <h3>Current Parliament</h3>
-                <div style="display: flex; justify-content: space-between; width: 100%; max-width: 600px;">
-                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
-                        <h2>123</h2>
+            <!-- Current Parliament Section -->
+            <div class="col-lg-6 col-sm-8 col-12 parliament-section">
+                <h3 class="text-center">Current Parliament</h3>
+                <div class="parliament-stats">
+                    <div class="parliament-stat">
+                        <h4>123</h4>
                         <p>Bills before parliament</p>
                     </div>
-                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
-                        <h2>123</h2>
+                    <div class="parliament-stat">
+                        <h4>123</h4>
                         <p>Bills not proceeding</p>
                     </div>
-                    <div class="parliament-stat" style="background: linear-gradient(180deg, #715DF6 0%, #FFF 100%); color: #000; padding: 15px; border-radius: 20px; width: 150px; height: 140px; text-align: center; border: 1px solid #000;">
-                        <h2>123</h2>
+                    <div class="parliament-stat">
+                        <h4>123</h4>
                         <p>Bills assented to</p>
                     </div>
                 </div>
             </div>
-
         </div>
-    </div>
-
-    <!-- Link to About Us Page -->
-    <div class="about-us-section text-center mt-5">
-        <a href="/about-us" class="btn btn-secondary">About Us</a>
     </div>
 </div>
