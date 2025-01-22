@@ -1,160 +1,154 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using DemocraticTapON.Data;
 using DemocraticTapON.Models;
-
-
-
+using DemocraticTapON.Models.ViewModels;
+using DemocraticTapON.Utilities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace DemocraticTapON.Controllers
 {
+    [Authorize] // Allows both Users and Representatives
     public class BillsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IBillStatisticsService _statisticsService;
 
-        public BillsController(ApplicationDbContext context)
+        public BillsController(
+            ApplicationDbContext context,
+            IBillStatisticsService statisticsService)
         {
             _context = context;
+            _statisticsService = statisticsService;
         }
 
-        // GET: Bills
-        public async Task<IActionResult> Index()
+        // GET: Bills/Index - Shows all bills
+        public async Task<IActionResult> Index(int page = 1, string? searchTerm = null, string? status = null)
         {
-            return View(await _context.Bills.ToListAsync());
+            int pageSize = 10;
+            var accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            // Start with all bills
+            var query = _context.Bills
+                .Include(b => b.ProposedByRep)
+                .ThenInclude(r => r.User)
+                .AsQueryable();
+
+            // Apply filters if provided
+            if (!string.IsNullOrEmpty(searchTerm))
+                query = query.Where(b => b.Title.Contains(searchTerm) || b.Description.Contains(searchTerm));
+
+            if (!string.IsNullOrEmpty(status) && Enum.TryParse<BillStatus>(status, out var billStatus))
+                query = query.Where(b => b.Status == billStatus);
+
+            // Order by most recent first
+            query = query.OrderByDescending(b => b.ProposedDate);
+
+            var totalBills = await query.CountAsync();
+            var bills = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Get user votes if the user is a regular user
+            var userVotes = new Dictionary<int, Vote?>();
+            if (User.IsInRole("User"))
+            {
+                userVotes = await _context.UserBills
+                    .Where(ub => ub.UserId == user.UserId)
+                    .ToDictionaryAsync(ub => ub.BillId, ub => ub.Vote);
+            }
+
+            var viewModel = new UserBillsViewModel
+            {
+                Bills = bills,
+                UserVotes = userVotes,
+                CurrentPage = page,
+                TotalPages = (int)Math.Ceiling(totalBills / (double)pageSize),
+                SearchTerm = searchTerm,
+                Status = status
+            };
+
+            return View(viewModel);
         }
 
         // GET: Bills/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+            if (user == null)
+                return NotFound("User not found");
 
             var bill = await _context.Bills
-                .FirstOrDefaultAsync(m => m.BillId == id);
+                .Include(b => b.ProposedByRep)
+                .ThenInclude(r => r.User)
+                .Include(b => b.Documents)
+                .Include(b => b.Comments)
+                .ThenInclude(c => c.User) // Include comment author details
+                .FirstOrDefaultAsync(b => b.BillId == id);
+
             if (bill == null)
-            {
                 return NotFound();
+
+            // Get user's vote if they're a regular user
+            Vote? userVote = null;
+            if (User.IsInRole("User"))
+            {
+                var vote = await _context.UserBills
+                    .FirstOrDefaultAsync(ub => ub.UserId == user.UserId && ub.BillId == bill.BillId);
+                userVote = vote?.Vote;
             }
 
-            return View(bill);
+            var viewModel = new BillDetailsViewModel
+            {
+                Bill = bill,
+                Documents = bill.Documents.ToList(),
+                VotingStats = await _statisticsService.CalculateBillVotingStatistics(bill),
+                Comments = await _statisticsService.GetBillComments(bill.BillId),
+                UserVote = userVote,
+                IsUserRepresentative = User.IsInRole("Representative")
+            };
+
+            return View(viewModel);
         }
 
-        // GET: Bills/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Bills/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BillId,Title,DateIntroduced,Status")] Bill bill)
+        [Authorize]
+        public async Task<IActionResult> AddComment(int billId, string content, int? parentCommentId)
         {
-            if (ModelState.IsValid)
+            if (string.IsNullOrEmpty(content))
+                return BadRequest("Comment content cannot be empty");
+
+            var accountId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            var comment = new BillComment
             {
-                _context.Add(bill);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(bill);
-        }
+                Content = content,
+                BillId = billId,
+                UserId = user.UserId,
+                PostedDate = DateTime.UtcNow,
+                ParentCommentId = parentCommentId
+            };
 
-        // GET: Bills/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var bill = await _context.Bills.FindAsync(id);
-            if (bill == null)
-            {
-                return NotFound();
-            }
-            return View(bill);
-        }
-
-        // POST: Bills/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("BillId,Title,DateIntroduced,Status")] Bill bill)
-        {
-            if (id != bill.BillId)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(bill);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BillExists(bill.BillId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(bill);
-        }
-
-        // GET: Bills/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var bill = await _context.Bills
-                .FirstOrDefaultAsync(m => m.BillId == id);
-            if (bill == null)
-            {
-                return NotFound();
-            }
-
-            return View(bill);
-        }
-
-        // POST: Bills/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var bill = await _context.Bills.FindAsync(id);
-            if (bill != null)
-            {
-                _context.Bills.Remove(bill);
-            }
-
+            _context.BillComments.Add(comment);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
 
-        private bool BillExists(int id)
-        {
-            return _context.Bills.Any(e => e.BillId == id);
+            return RedirectToAction(nameof(Details), new { id = billId });
         }
     }
 }

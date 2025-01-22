@@ -1,0 +1,122 @@
+﻿@* Views/Representative/Index.cshtml *@
+@model RepresentativeDashboardViewModel
+@{
+    ViewData["Title"] = "Representative Dashboard";
+}
+
+<div class="container py-4">
+    <!-- Profile Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">Welcome, @Model.RepresentativeInfo.User.FirstName @Model.RepresentativeInfo.User.LastName</h3>
+                        <a href="@Url.Action("EditProfile", "Representative")" class="btn btn-outline-primary">Edit Profile</a>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Constituency: @Model.RepresentativeInfo.Constituency</p>
+                    <p class="text-muted mb-0">State: @Model.RepresentativeInfo.State</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Bills Proposed</h5>
+                    <h2 class="mb-0">@Model.MyBills.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Active Bills</h5>
+                    <h2 class="mb-0">@Model.MyBills.Count(b => b.Status == BillStatus.Active)</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Votes Received</h5>
+                    <h2 class="mb-0">@Model.VotingStatistics.TotalVotes</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bills Section -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="card-title mb-0">Recent Bills</h4>
+                <a href="@Url.Action("CreateBill")" class="btn btn-primary">Propose New Bill</a>
+            </div>
+
+            @if (Model.MyBills.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Proposed Date</th>
+                                <th>Votes (Yes/No)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var bill in Model.MyBills)
+                            {
+                                <tr>
+                                    <td>@bill.Title</td>
+                                    <td>
+                                        <span class="badge bg-@GetStatusColor(bill.Status)">
+                                            @bill.Status
+                                        </span>
+                                    </td>
+                                    <td>@bill.ProposedDate.ToShortDateString()</td>
+                                    <td>@bill.YesVotes / @bill.NoVotes</td>
+                                    <td>
+                                        <a href="@Url.Action("BillDetails", new { id = bill.BillId })"
+                                           class="btn btn-sm btn-info">View Details</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-end mt-3">
+                    <a href="@Url.Action("MyBills")" class="btn btn-secondary">View All Bills</a>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No bills proposed yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetStatusColor(BillStatus status)
+    {
+        return status switch
+        {
+            BillStatus.Pending => "warning",
+            BillStatus.Active => "primary",
+            BillStatus.Closed => "secondary",
+            BillStatus.Enacted => "success",
+            BillStatus.Rejected => "danger",
+            _ => "secondary"
+        };
+    }
+}

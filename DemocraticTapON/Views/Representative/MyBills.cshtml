@@ -1,0 +1,87 @@
+﻿@model MyBillsViewModel
+@{
+    ViewData["Title"] = "My Bills";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>My Bills</h2>
+                <a href="@Url.Action("CreateBill", "Representative")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create New Bill
+                </a>
+            </div>
+
+            @if (!Model.Bills.Any())
+            {
+                <div class="text-center text-muted">
+                    <p>You haven't proposed any bills yet.</p>
+                </div>
+            }
+            else
+            {
+                foreach (var bill in Model.Bills)
+                {
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h3 class="card-title mb-1">@bill.Title</h3>
+                                    <p class="text-muted">
+                                        Proposed on @bill.ProposedDate.ToString("MMM dd, yyyy")
+                                    </p>
+                                </div>
+                                <span class="badge bg-@(bill.Status switch {
+                                    BillStatus.Active => "success",
+                                    BillStatus.Pending => "warning",
+                                    BillStatus.Closed => "secondary",
+                                    BillStatus.Enacted => "primary",
+                                    _ => "danger"
+                                })">@bill.Status</span>
+                            </div>
+
+                            <p class="card-text mt-3">@bill.Description</p>
+
+                            <div class="mt-3">
+                                @if (bill.Status == BillStatus.Active)
+                                {
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        @{
+                                            var totalVotes = bill.YesVotes + bill.NoVotes;
+                                            var yesPercentage = totalVotes > 0 ? (bill.YesVotes * 100.0 / totalVotes) : 0;
+                                        }
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: @yesPercentage%">
+                                            @bill.YesVotes votes (@yesPercentage.ToString("F1")%)
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Total Votes: @totalVotes</small>
+                                }
+
+                                <div class="mt-3">
+                                    <a href="@Url.Action("BillDetails", new { id = bill.BillId })"
+                                       class="btn btn-outline-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            @for (var i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("MyBills", new { page = i })">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

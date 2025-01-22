@@ -1,0 +1,119 @@
+﻿@model UserBillsViewModel
+@{
+    ViewData["Title"] = "Active Bills";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Active Bills</h2>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @foreach (var bill in Model.Bills)
+            {
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h3 class="card-title">@bill.Title</h3>
+                            <p class="text-muted">@bill.Description</p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <strong>Proposed by:</strong> @bill.ProposedByRep.User.FirstName @bill.ProposedByRep.User.LastName
+                                </p>
+                                <p>
+                                    <strong>Voting ends:</strong> @bill.VotingEndDate.ToString("MMM dd, yyyy")
+                                </p>
+                            </div>
+
+                            <div class="col-md-6">
+                                @{
+                                    var userVote = Model.UserVotes.GetValueOrDefault(bill.BillId);
+                                    var hasVoted = userVote.HasValue;
+                                }
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2">Current Votes</h6>
+                                        <div class="progress mb-3" style="height: 25px;">
+                                            @{
+                                                var totalVotes = bill.YesVotes + bill.NoVotes;
+                                                var yesPercentage = totalVotes > 0 ? (bill.YesVotes * 100.0 / totalVotes) : 0;
+                                                var noPercentage = totalVotes > 0 ? (bill.NoVotes * 100.0 / totalVotes) : 0;
+                                            }
+                                            <div class="progress-bar bg-success"
+                                                 role="progressbar"
+                                                 style="width: @yesPercentage%"
+                                                 aria-valuenow="@yesPercentage"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                Yes (@bill.YesVotes) - @yesPercentage.ToString("F1")%
+                                            </div>
+                                            <div class="progress-bar bg-danger"
+                                                 role="progressbar"
+                                                 style="width: @noPercentage%"
+                                                 aria-valuenow="@noPercentage"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                                No (@bill.NoVotes) - @noPercentage.ToString("F1")%
+                                            </div>
+                                        </div>
+
+                                        <form asp-action="Vote" method="post" class="text-center">
+                                            <input type="hidden" name="billId" value="@bill.BillId" />
+                                            <div class="btn-group" role="group">
+                                                <button type="submit"
+                                                        name="vote"
+                                                        value="@((int)Vote.Yes)"
+                                                        class="btn @(hasVoted && userVote == Vote.Yes ? "btn-success" : "btn-outline-success")">
+                                                    Yes
+                                                </button>
+                                                <button type="submit"
+                                                        name="vote"
+                                                        value="@((int)Vote.No)"
+                                                        class="btn @(hasVoted && userVote == Vote.No ? "btn-danger" : "btn-outline-danger")">
+                                                    No
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Bills"
+                                   asp-route-page="@i">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+
+            @if (!Model.Bills.Any())
+            {
+                <div class="text-center text-muted mt-4">
+                    <p>No active bills available at the moment.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

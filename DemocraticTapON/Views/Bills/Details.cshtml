@@ -1,36 +1,222 @@
-@model DemocraticTapON.Models.Bill
-
+﻿@model BillDetailsViewModel
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Bill Details";
 }
 
-<h1>Details</h1>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
-<div>
-    <h4>Bill</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DateIntroduced)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DateIntroduced)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.BillId">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+            <!-- Bill Header Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="mb-1">@Model.Bill.Title</h2>
+                            <p class="text-muted mb-2">
+                                Proposed by @Model.Bill.ProposedByRep.User.FirstName @Model.Bill.ProposedByRep.User.LastName
+                                on @Model.Bill.ProposedDate.ToString("MMM dd, yyyy")
+                            </p>
+                            @if (Model.Bill.VotingEndDate != DateTime.MinValue)
+                            {
+                                <p class="text-muted">
+                                    Voting ends: @Model.Bill.VotingEndDate.ToString("MMM dd, yyyy")
+                                </p>
+                            }
+                        </div>
+                        <span class="badge bg-@(Model.Bill.Status switch {
+                            BillStatus.Active => "success",
+                            BillStatus.Pending => "warning",
+                            BillStatus.Closed => "secondary",
+                            BillStatus.Enacted => "primary",
+                            _ => "danger"
+                        }) fs-6">@Model.Bill.Status</span>
+                    </div>
+
+                    <div class="mt-3">
+                        <h5>Description</h5>
+                        <p>@Model.Bill.Description</p>
+                    </div>
+
+                    <!-- Status Update for Representatives (only for their own bills) -->
+                    @if (Model.IsUserRepresentative && Model.Bill.ProposedByRepId == int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
+                    {
+                        <div class="mt-3">
+                            <form asp-controller="Representative" asp-action="UpdateBillStatus" method="post" class="row g-3">
+                                <input type="hidden" name="billId" value="@Model.Bill.BillId" />
+                                <div class="col-md-4">
+                                    <select name="newStatus" class="form-select" asp-items="@Model.StatusList"></select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary">Update Status</button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Voting Section -->
+            @if (Model.Bill.Status == BillStatus.Active)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Voting</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.IsUserRepresentative)
+                        {
+                            <!-- For Users: Only show their vote -->
+                            <div class="text-center">
+                                <p>Cast your vote on this bill:</p>
+                                <form asp-controller="User" asp-action="Vote" method="post">
+                                    <input type="hidden" name="billId" value="@Model.Bill.BillId" />
+                                    <div class="btn-group" role="group">
+                                        <button type="submit" name="vote" value="@((int)Vote.Yes)"
+                                                class="btn @(Model.UserVote == Vote.Yes ? "btn-success" : "btn-outline-success")">
+                                            Yes
+                                        </button>
+                                        <button type="submit" name="vote" value="@((int)Vote.No)"
+                                                class="btn @(Model.UserVote == Vote.No ? "btn-danger" : "btn-outline-danger")">
+                                            No
+                                        </button>
+                                    </div>
+                                </form>
+                                @if (Model.UserVote.HasValue)
+                                {
+                                    <p class="mt-3">Your vote has been recorded.</p>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- For Representatives: Only show total votes -->
+                            <p class="text-center">
+                                Total votes cast: @(Model.Bill.YesVotes + Model.Bill.NoVotes)
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Show complete voting statistics only after voting is closed -->
+            @if (Model.Bill.Status != BillStatus.Active && Model.Bill.Status != BillStatus.Pending)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Final Voting Results</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var totalVotes = Model.Bill.YesVotes + Model.Bill.NoVotes;
+                            var yesPercentage = totalVotes > 0 ? (Model.Bill.YesVotes * 100.0 / totalVotes) : 0;
+                            var noPercentage = totalVotes > 0 ? (Model.Bill.NoVotes * 100.0 / totalVotes) : 0;
+                        }
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @yesPercentage%">
+                                Yes (@Model.Bill.YesVotes) - @yesPercentage.ToString("F1")%
+                            </div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: @noPercentage%">
+                                No (@Model.Bill.NoVotes) - @noPercentage.ToString("F1")%
+                            </div>
+                        </div>
+                        <p class="text-center">Total votes: @totalVotes</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Documents Section -->
+            @if (Model.Documents.Any())
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Related Documents</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            @foreach (var doc in Model.Documents)
+                            {
+                                <a href="@doc.FileUrl" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-file me-2"></i>
+                                    @doc.Title
+                                    <small class="text-muted ms-2">
+                                        Uploaded on @doc.UploadDate.ToString("MMM dd, yyyy")
+                                    </small>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Comments Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Comments</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddComment" method="post" class="mb-4">
+                        <input type="hidden" name="billId" value="@Model.Bill.BillId" />
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3"
+                                      placeholder="Add your comment..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Comment</button>
+                    </form>
+
+                    @if (Model.Comments.Any())
+                    {
+                        foreach (var comment in Model.Comments)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="card-subtitle mb-2 text-muted">
+                                            @comment.UserName
+                                        </h6>
+                                        <small class="text-muted">
+                                            @comment.PostedDate.ToString("MMM dd, yyyy HH:mm")
+                                        </small>
+                                    </div>
+                                    <p class="card-text">@comment.Content</p>
+
+                                    <!-- Replies -->
+                                    @if (comment.Replies.Any())
+                                    {
+                                        foreach (var reply in comment.Replies)
+                                        {
+                                            <div class="card ms-5 mb-2">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between">
+                                                        <h6 class="card-subtitle mb-2 text-muted">
+                                                            @reply.UserName
+                                                        </h6>
+                                                        <small class="text-muted">
+                                                            @reply.PostedDate.ToString("MMM dd, yyyy HH:mm")
+                                                        </small>
+                                                    </div>
+                                                    <p class="card-text">@reply.Content</p>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center">No comments yet. Be the first to comment!</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

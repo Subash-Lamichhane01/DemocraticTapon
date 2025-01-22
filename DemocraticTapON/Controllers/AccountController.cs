@@ -1,21 +1,22 @@
 ﻿using DemocraticTapON.Data;
 using DemocraticTapON.Models;
+using DemocraticTapON.Models.ViewModels;
 using DemocraticTapON.Utilities;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 public class AccountController : Controller
 {
+    private readonly IAccountService _accountService;
     private readonly ApplicationDbContext _context;
-    private readonly EmailService _emailService;
 
-    public AccountController(ApplicationDbContext context, EmailService emailService)
+    public AccountController(IAccountService accountService, ApplicationDbContext context)
     {
+        _accountService = accountService;
         _context = context;
-        _emailService = emailService;
     }
 
     [HttpGet]
@@ -23,9 +24,7 @@ public class AccountController : Controller
     {
         if (User.Identity.IsAuthenticated)
         {
-            var initialLogin = HttpContext.User.Identity as ClaimsIdentity;
             var authProperties = await HttpContext.GetTokenAsync("initial_login");
-
             if (authProperties != "true")
             {
                 return RedirectToAction("Index", "Home");
@@ -38,12 +37,8 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(AccountModel model)
+    public async Task<IActionResult> Login(LoginViewModel model)
     {
-        ModelState.Remove(nameof(model.Email));
-        ModelState.Remove(nameof(model.FirstName));
-        ModelState.Remove(nameof(model.LastName));
-        ModelState.Remove(nameof(model.PhoneNumber));
 
         if (!ModelState.IsValid)
         {
@@ -52,52 +47,42 @@ public class AccountController : Controller
 
         try
         {
-            var user = await _context.Accounts
-                .FirstOrDefaultAsync(u => u.Username == model.Username);
-
-            if (user == null)
+            var (success, error) = await _accountService.ValidateLoginAsync(model);
+            if (!success)
             {
-                ModelState.AddModelError(string.Empty, "Invalid username or password");
+                ModelState.AddModelError(string.Empty, error);
                 return View(model);
             }
 
-            if (PasswordHasher.VerifyPassword(model.Password, user.Password))
-            {
-                // Generate verification code
-                var verificationCode = _emailService.GenerateVerificationCode();
 
-                // Store verification details in TempData
-                TempData["PendingUserId"] = user.Id;
-                TempData["VerificationCode"] = verificationCode;
-                TempData["UserEmail"] = user.Email;
-                TempData.Keep("PendingUserId");
-                TempData.Keep("VerificationCode");
-                TempData.Keep("UserEmail");
 
-                // Add verification start time
-                TempData["VerificationStartTime"] = DateTime.UtcNow.ToString("O");
-                TempData.Keep("VerificationStartTime");
+            var user = await _context.Accounts.FirstOrDefaultAsync(u => u.Username == model.Username);
 
-                // Send verification code via email
-                var codeSent = await _emailService.SendVerificationCodeAsync(user.Email, verificationCode);
-                if (!codeSent)
-                {
-                    ModelState.AddModelError(string.Empty, "Failed to send verification code");
-                    return View(model);
-                }
 
-                return RedirectToAction("VerifyEmail");
-            }
+#if DEBUG
+            // Skip email verification in development
+            var principal = await _accountService.CreateUserClaimsPrincipalAsync(user);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            return RedirectBasedOnRole(user.Role);
+        #else
+            var verificationCode = await _accountService.GenerateAndSendVerificationCodeAsync(user.Email);
 
-            ModelState.AddModelError(string.Empty, "Invalid username or password");
+
+            // Store verification details in TempData
+            TempData["PendingUserId"] = user.Id;
+            TempData["VerificationCode"] = verificationCode;
+            TempData["UserEmail"] = user.Email;
+            TempData["VerificationStartTime"] = DateTime.UtcNow.ToString("O");
+
+            TempData.Keep();
+            return RedirectToAction("VerifyEmail");
+#endif
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Login Error: {ex.Message}");
             ModelState.AddModelError(string.Empty, "An error occurred during login");
+            return View(model);
         }
-
-        return View(model);
     }
 
     [HttpGet]
@@ -107,7 +92,7 @@ public class AccountController : Controller
         var userEmail = TempData.Peek("UserEmail")?.ToString();
         var verificationStartTime = TempData.Peek("VerificationStartTime")?.ToString();
 
-        if (userId == null || userEmail == null)
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail))
         {
             return RedirectToAction("Login");
         }
@@ -122,11 +107,7 @@ public class AccountController : Controller
             }
         }
 
-        TempData.Keep("PendingUserId");
-        TempData.Keep("VerificationCode");
-        TempData.Keep("UserEmail");
-        TempData.Keep("VerificationStartTime");
-
+        TempData.Keep();
         return View();
     }
 
@@ -137,7 +118,6 @@ public class AccountController : Controller
         {
             var storedCode = TempData["VerificationCode"]?.ToString();
             var userId = TempData["PendingUserId"]?.ToString();
-            var verificationStartTime = TempData["VerificationStartTime"]?.ToString();
 
             if (string.IsNullOrEmpty(storedCode) || string.IsNullOrEmpty(userId))
             {
@@ -145,25 +125,11 @@ public class AccountController : Controller
                 return RedirectToAction("Login");
             }
 
-            // Check verification timeout
-            if (verificationStartTime != null)
-            {
-                var startTime = DateTime.Parse(verificationStartTime);
-                if (DateTime.UtcNow.Subtract(startTime).TotalMinutes > 10)
-                {
-                    TempData["ErrorMessage"] = "Verification session expired. Please login again.";
-                    return RedirectToAction("Login");
-                }
-            }
-
-            var isVerified = _emailService.VerifyCode(storedCode, code);
+            var isVerified = _accountService.VerifyCode(storedCode, code);
             if (!isVerified)
             {
                 ModelState.AddModelError(string.Empty, "Invalid verification code");
-                TempData.Keep("PendingUserId");
-                TempData.Keep("VerificationCode");
-                TempData.Keep("UserEmail");
-                TempData.Keep("VerificationStartTime");
+                TempData.Keep();
                 return View();
             }
 
@@ -174,99 +140,87 @@ public class AccountController : Controller
                 return RedirectToAction("Login");
             }
 
-            var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-        };
+            var principal = await _accountService.CreateUserClaimsPrincipalAsync(user);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var authProperties = new AuthenticationProperties
-            {
-                AllowRefresh = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30),
-                IsPersistent = true
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
-
-            // Clear TempData after successful verification
-            TempData.Remove("PendingUserId");
-            TempData.Remove("VerificationCode");
-            TempData.Remove("UserEmail");
-            TempData.Remove("VerificationStartTime");
-
-            return RedirectToAction("Index", "Home");
+            TempData.Clear();
+            return RedirectBasedOnRole(user.Role);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"VerifyEmail Error: {ex.Message}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             TempData["ErrorMessage"] = "An error occurred during verification. Please try again.";
             return RedirectToAction("Login");
         }
     }
 
+
+    private IActionResult RedirectBasedOnRole(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Admin => RedirectToAction("Index", "Admin"),
+            UserRole.Representative => RedirectToAction("Index", "Representative"),
+            UserRole.User => RedirectToAction("Index", "Home"),
+            _ => RedirectToAction("Index", "Home"),
+        };
+    }
+
+
     [HttpGet]
     public IActionResult Signup()
     {
-        return View();
+        return View(new SignupViewModel());
     }
 
     [HttpPost]
-    public async Task<IActionResult> Signup(AccountModel model)
+    public async Task<IActionResult> Signup(SignupViewModel viewModel)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            var existingUser = await _context.Accounts
-                .FirstOrDefaultAsync(u => u.Username == model.Username);
+            return View(viewModel);
+        }
 
-            if (existingUser != null)
+        try
+        {
+            var (success, error) = await _accountService.ValidateSignupAsync(viewModel);
+            if (!success)
             {
-                ModelState.AddModelError("Username", "Username is already taken");
-                return View(model);
+                ModelState.AddModelError(string.Empty, error);
+                return View(viewModel);
             }
 
-            // Generate and send verification code
-            var verificationCode = _emailService.GenerateVerificationCode();
-            var codeSent = await _emailService.SendVerificationCodeAsync(model.Email, verificationCode);
-            if (!codeSent)
-            {
-                ModelState.AddModelError(string.Empty, "Failed to send verification code");
-                return View(model);
-            }
+            var verificationCode = await _accountService.GenerateAndSendVerificationCodeAsync(viewModel.Email);
 
             // Store signup details and verification code in TempData
-            TempData["PendingSignup"] = System.Text.Json.JsonSerializer.Serialize(model);
+            TempData["PendingSignup"] = JsonSerializer.Serialize(viewModel);
             TempData["VerificationCode"] = verificationCode;
-            TempData.Keep("PendingSignup");
-            TempData.Keep("VerificationCode");
-
             TempData["VerificationStartTime"] = DateTime.UtcNow.ToString("O");
-            TempData.Keep("VerificationStartTime");
+            TempData.Keep();
 
             return RedirectToAction("VerifySignup");
         }
-
-        return View(model);
+        catch (Exception)
+        {
+            ModelState.AddModelError(string.Empty, "An error occurred during signup");
+            return View(viewModel);
+        }
     }
 
     [HttpGet]
     public IActionResult VerifySignup()
     {
-        var modelJson = TempData.Peek("PendingSignup")?.ToString();
-        if (string.IsNullOrEmpty(modelJson))
+        var signupJson = TempData.Peek("PendingSignup")?.ToString();
+        var verificationStart = TempData.Peek("VerificationStartTime")?.ToString();
+
+        if (string.IsNullOrEmpty(signupJson))
         {
             TempData["ErrorMessage"] = "Signup session expired. Please try again.";
             return RedirectToAction("Signup");
         }
 
-        if (TempData["VerificationStartTime"] != null)
+        if (verificationStart != null)
         {
-            var startTime = DateTime.Parse(TempData["VerificationStartTime"].ToString());
+            var startTime = DateTime.Parse(verificationStart);
             if (DateTime.UtcNow.Subtract(startTime).TotalMinutes > 10)
             {
                 TempData["ErrorMessage"] = "Verification session expired. Please try again.";
@@ -274,94 +228,46 @@ public class AccountController : Controller
             }
         }
 
-        TempData.Keep("PendingSignup");
-        TempData.Keep("VerificationCode");
-        TempData.Keep("VerificationStartTime");
-
+        TempData.Keep();
         return View();
     }
 
     [HttpPost]
     public async Task<IActionResult> VerifySignup(string code)
     {
-        var modelJson = TempData["PendingSignup"]?.ToString();
-        var storedCode = TempData["VerificationCode"]?.ToString();
-
-        if (string.IsNullOrEmpty(modelJson) || string.IsNullOrEmpty(storedCode))
-        {
-            TempData["ErrorMessage"] = "Signup session expired. Please try again.";
-            return RedirectToAction("Signup");
-        }
-
         try
         {
-            var model = System.Text.Json.JsonSerializer.Deserialize<AccountModel>(modelJson);
+            var signupJson = TempData["PendingSignup"]?.ToString();
+            var storedCode = TempData["VerificationCode"]?.ToString();
 
-            // Verify the code
-            var isVerified = _emailService.VerifyCode(storedCode, code);
-            if (!isVerified)
+            if (string.IsNullOrEmpty(signupJson) || string.IsNullOrEmpty(storedCode))
             {
-                ModelState.AddModelError(string.Empty, "Invalid verification code");
-                TempData.Keep("PendingSignup");
-                TempData.Keep("VerificationCode");
-                TempData.Keep("VerificationStartTime");
-                return View();
-            }
-
-            var existingUser = await _context.Accounts
-                .FirstOrDefaultAsync(u => u.Username == model.Username);
-
-            if (existingUser != null)
-            {
-                TempData["ErrorMessage"] = "Username is no longer available. Please choose another.";
+                TempData["ErrorMessage"] = "Signup session expired. Please try again.";
                 return RedirectToAction("Signup");
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var viewModel = JsonSerializer.Deserialize<SignupViewModel>(signupJson);
+
+            if (!_accountService.VerifyCode(storedCode, code))
             {
-                model.Password = PasswordHasher.HashPassword(model.Password);
-                model.IsEmailVerified = true;  // Consider renaming this to IsEmailVerified
-                model.LastVerificationDate = DateTime.UtcNow;
-
-                _context.Accounts.Add(model);
-                await _context.SaveChangesAsync();
-
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, model.Username),
-                    new Claim(ClaimTypes.NameIdentifier, model.Id.ToString())
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    AllowRefresh = true,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30),
-                    IsPersistent = true,
-                    Items = { { "initial_login", "true" } }
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                await transaction.CommitAsync();
-
-                TempData["SuccessMessage"] = "Account created successfully! Welcome!";
-                return RedirectToAction("Index", "Home");
+                ModelState.AddModelError(string.Empty, "Invalid verification code");
+                TempData.Keep();
+                return View();
             }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+
+            var account = await _accountService.CreateUserAccountAsync(viewModel);
+            var principal = await _accountService.CreateUserClaimsPrincipalAsync(account, true);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal);
+
+            TempData.Clear();
+            TempData["SuccessMessage"] = "Account created successfully! Welcome!";
+            return RedirectBasedOnRole(account.Role);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"VerifySignup Error: {ex.Message}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             TempData["ErrorMessage"] = "An error occurred during signup. Please try again.";
             return RedirectToAction("Signup");
         }

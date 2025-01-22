@@ -1,0 +1,72 @@
+﻿@* Views/Representative/CreateBill.cshtml *@
+@model BillCreateViewModel
+@{
+    ViewData["Title"] = "Propose New Bill";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Propose New Bill</h2>
+
+                    <form asp-action="CreateBill" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label"></label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="VotingEndDate" class="form-label"></label>
+                            <input asp-for="VotingEndDate" class="form-control" type="date"
+                                   min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="VotingEndDate" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Documents" class="form-label"></label>
+                            <input type="file" asp-for="Documents" class="form-control" multiple
+                                   accept=".pdf,.doc,.docx,.txt" />
+                            <span asp-validation-for="Documents" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                Accepted file types: PDF, DOC, DOCX, TXT. Maximum file size: 10MB
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>
+                            <button type="submit" class="btn btn-primary">Submit Bill</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Add client-side validation for the voting end date
+        $(document).ready(function () {
+            var today = new Date();
+            var tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            $('#VotingEndDate').attr('min', tomorrow.toISOString().split('T')[0]);
+        });
+    </script>
+}

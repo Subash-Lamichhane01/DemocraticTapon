@@ -1,12 +1,16 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DemocraticTapON.Models
+namespace DemocraticTapON.Models.ViewModels
 {
-    public class Representative
+    public class EditProfileViewModel
     {
-        [Key]
-        public int RepresentativeId { get; set; }
+        [Required]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; }
+
+        [Required]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; }
 
         [Required]
         [StringLength(100)]
@@ -31,7 +35,6 @@ namespace DemocraticTapON.Models
         [DataType(DataType.Date)]
         public DateTime TermEnd { get; set; }
 
-        // Office contact details
         [Phone]
         [Display(Name = "Office Phone")]
         public string? OfficePhone { get; set; }
@@ -40,23 +43,5 @@ namespace DemocraticTapON.Models
         [StringLength(200)]
         [Display(Name = "Office Address")]
         public string OfficeAddress { get; set; }
-
-        // Link to User model
-        public int UserId { get; set; }
-
-        [ForeignKey("UserId")]
-        public User User { get; set; }
-
-        // Navigation property for Bills proposed by this representative
-        public virtual ICollection<Bill> ProposedBills { get; set; }
-
-        // Calculated property for active status
-        [NotMapped]
-        public bool IsActive => DateTime.Now >= TermStart && DateTime.Now <= TermEnd;
-
-        public Representative()
-        {
-            ProposedBills = new List<Bill>();
-        }
     }
 }

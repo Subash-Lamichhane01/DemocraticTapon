@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DemocraticTapON.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace DemocraticTapON.Models
 {
@@ -20,25 +21,17 @@ namespace DemocraticTapON.Models
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [Display(Name = "Email Address")]
         public string Email { get; set; }
-
-        [StringLength(50, ErrorMessage = "First name cannot be longer than 50 characters")]
-        [Display(Name = "First Name")]
-        public string FirstName { get; set; }
-
-        [StringLength(50, ErrorMessage = "Last name cannot be longer than 50 characters")]
-        [Display(Name = "Last Name")]
-        public string LastName { get; set; }
-
         
-        [Phone(ErrorMessage = "Invalid phone number format")]
-        [Display(Name = "Phone Number")]
-        public string PhoneNumber { get; set; }
-
         [Display(Name = "Email Verified")]
         public bool IsEmailVerified { get; set; } = false;
 
         // Optional: Store the last verification date
         [Display(Name = "Last Verification Date")]
         public DateTime? LastVerificationDate { get; set; }
+
+        public User User { get; set; }
+
+        [Required]
+        public UserRole Role { get; set; }
     }
 }

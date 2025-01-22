@@ -5,9 +5,9 @@ namespace DemocraticTapON.Controllers
     public class AboutUsController : Controller
     {
         // Make sure this method returns the correct view (aboutus.cshtml)
-        public IActionResult AboutUs()
+        public IActionResult Index()
         {
-            return View("~/Views/Home/AboutUs/AboutUs.cshtml");  // This will return the /Views/AboutUs/aboutus.cshtml view
+            return View();  // This will return the /Views/AboutUs/aboutus.cshtml view
         }
     }
 }

@@ -1,89 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bills - Democratic Tap On</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-pzjw8f+ua7Kw1TIqQuFFntxg3MhZl8VV7RqIql9WLYBOrl53EBr3sF5HKvonQdcJ" crossorigin="anonymous">
-    <link rel="stylesheet" href="~/css/site.css" />
-</head>
-<body style="background-color: #000; color: #fff;">
-    <div class="container">
-        <div class="text-center mt-5">
-            <h1 class="font-weight-bold">ALL BILLS BEFORE THE HOUSE</h1>
-            <p class="lead">These bills will be debated when the government permits</p>
-            <h2>HOW DO YOU WANT OUR REP TO VOTE?</h2>
-            <div class="search-bar mt-4 mb-4">
-                <input type="text" class="form-control" placeholder="Keywords" style="display: inline-block; width: auto; margin-right: 10px;">
-                <button class="btn btn-primary">Filter Options</button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">Stop pork barrelling</h3>
-                        <p class="card-text">This bill aims to inform the governance of the use of public resources to ensure fairness and transparency in the allocation of funds.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
-                    </div>
+﻿@model UserBillsViewModel
+@{
+    ViewData["Title"] = "All Bills";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="mb-4">Bills</h2>
+
+            <!-- Search and Filter Section -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control"
+                                       name="searchTerm"
+                                       value="@Model.SearchTerm"
+                                       placeholder="Search bills...">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="status" class="form-select" asp-items="@(new SelectList(Model.AvailableStatuses))">
+                                <option value="">All Statuses</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
-                <div class="card">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @foreach (var bill in Model.Bills)
+            {
+                <div class="card mb-4">
                     <div class="card-body">
-                        <h3 class="card-title">Assisted Suicide Communications</h3>
-                        <p class="card-text">The bill addresses the penalties for suicide-related material, including assisting or enabling suicide through communication channels.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h3 class="card-title mb-1">@bill.Title</h3>
+                                <p class="text-muted mb-0">
+                                    Proposed by @bill.ProposedByRep.User.FirstName @bill.ProposedByRep.User.LastName
+                                    on @bill.ProposedDate.ToString("MMM dd, yyyy")
+                                </p>
+                            </div>
+                            <span class="badge bg-@(bill.Status switch {
+                                BillStatus.Active => "success",
+                                BillStatus.Pending => "warning",
+                                BillStatus.Closed => "secondary",
+                                BillStatus.Enacted => "primary",
+                                _ => "danger"
+                            })">@bill.Status</span>
+                        </div>
+
+                        <p class="card-text">@(bill.Description?.Length > 200 ? bill.Description.Substring(0, 200) + "..." : bill.Description)</p>
+
+                        <div class="row align-items-center">
+                            <div class="col">
+                                @if (bill.Status == BillStatus.Active)
+                                {
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        @{
+                                            var totalVotes = bill.YesVotes + bill.NoVotes;
+                                            var yesPercentage = totalVotes > 0 ? (bill.YesVotes * 100.0 / totalVotes) : 0;
+                                            var noPercentage = totalVotes > 0 ? (bill.NoVotes * 100.0 / totalVotes) : 0;
+                                        }
+                                        <div class="progress-bar bg-success"
+                                             role="progressbar"
+                                             style="width: @yesPercentage%">
+                                            Yes (@yesPercentage.ToString("F1")%)
+                                        </div>
+                                        <div class="progress-bar bg-danger"
+                                             role="progressbar"
+                                             style="width: @noPercentage%">
+                                            No (@noPercentage.ToString("F1")%)
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Total Votes: @totalVotes</small>
+                                }
+                            </div>
+                            <div class="col-auto">
+                                <a href="@Url.Action("Details", new { id = bill.BillId })"
+                                   class="btn btn-outline-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">Fair Elections</h3>
-                        <p class="card-text">This bill aims to improve transparency, reduce financial influence, and level the playing field in political campaigning and elections.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
-                    </div>
+            }
+
+            @if (!Model.Bills.Any())
+            {
+                <div class="text-center text-muted mt-4">
+                    <p>No bills found matching your criteria.</p>
                 </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">STOP IMPORTING ILLEGAL LOGGING</h3>
-                        <p class="card-text">The measures proposed aim to support the restrictions on illegal logging and importation.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">STOP OFFSHORE OIL EXPLORATION</h3>
-                        <p class="card-text">This bill aims to ensure safer energy practices and reduce offshore oil explorations that endanger the environment.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">Vaping Safety</h3>
-                        <p class="card-text">This bill seeks to impose transparency, reduce harmful additives, and improve safety regulations for vaping products.</p>
-                        <a href="#" class="btn btn-outline-primary">Read More</a>
-                    </div>
-                </div>
-            </div>
+            }
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        @for (var i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link"
+                                   href="@Url.Action("Index", new { page = i, searchTerm = Model.SearchTerm, status = Model.Status })">
+                                    @i
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
         </div>
     </div>
-
-
-
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha384-KyZXEAg3QhqLMpG8r+Knujsl5/0U7Bv7U4jCf5Sd2z1qq5L5r5Mvv4lRJ6bE/r4+" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" integrity="sha384-LtrjvnR4Twt/qOuYxC/8fhkMvYhVOcI3B5Z4swO7pS6XbzFqZqkWzc3EsQdT9MjF" crossorigin="anonymous"></script>
-    <footer class="footer mt-auto py-3 bg-dark text-white">
-        <div class="container text-center">
-            <span>&copy; @DateTime.Now.Year - Democratic Tap On. All rights reserved.</span>
-        </div>
-    </footer>
-</body>
-</html>
+</div>

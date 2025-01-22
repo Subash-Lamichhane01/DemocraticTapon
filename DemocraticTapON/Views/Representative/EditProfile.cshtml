@@ -1,0 +1,93 @@
+﻿@model EditProfileViewModel
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Edit Profile</h2>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form asp-action="EditProfile" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Constituency" class="form-label"></label>
+                            <input asp-for="Constituency" class="form-control" />
+                            <span asp-validation-for="Constituency" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="State" class="form-label"></label>
+                            <input asp-for="State" class="form-control" />
+                            <span asp-validation-for="State" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PoliticalParty" class="form-label"></label>
+                            <input asp-for="PoliticalParty" class="form-control" />
+                            <span asp-validation-for="PoliticalParty" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TermStart" class="form-label"></label>
+                            <input asp-for="TermStart" class="form-control" type="date" />
+                            <span asp-validation-for="TermStart" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TermEnd" class="form-label"></label>
+                            <input asp-for="TermEnd" class="form-control" type="date" />
+                            <span asp-validation-for="TermEnd" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OfficePhone" class="form-label"></label>
+                            <input asp-for="OfficePhone" class="form-control" />
+                            <span asp-validation-for="OfficePhone" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OfficeAddress" class="form-label"></label>
+                            <textarea asp-for="OfficeAddress" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="OfficeAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
